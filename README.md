@@ -1,5 +1,5 @@
 ---
-#Link on <a href="http://rpubs.com/mliu5408/RepData_PeerAssessment2" target="_blank">RPubs</a>  My [Coursera-Reproducible-Research](https://github.com/mliu5408/RepData_PeerAssessment2) Repo
+Link on <a href="http://rpubs.com/mliu5408/" target="_blank">RPubs</a>  My [Coursera-Reproducible-Research](https://github.com/mliu5408/RepData_PeerAssessment2) Repo
 ---
 ### Introduction
 Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.
