@@ -1,0 +1,199 @@
+---
+output:
+  html_document:
+    keep_md: yes
+    #toc: yes
+---
+# Analysis of Weather Impacts in the USA Based on the NOAA Storm Database (Reproducible Research Project2)
+
+Date: 28-02-2018
+
+=============================================================================================
+
+## Synopsis
+
+The NOAA (National Oceanic & Atmospheric Administration) Storm Database contains characteristics of major weather events in the US. This project will fetch the data, make it tidy and then aggregate the following:  
+
+1. Most harmful events to human health (fatalities and injuries). 
+2. Events that have strongest damages to property and crop.
+
+
+## Data Processing
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+setwd("C:/Users/mingfuliu/RepData_PeerAssessment2")
+data <- read.csv("repdata_data_StormData.csv.bz2")
+data$EVTYPE = toupper(data$EVTYPE)
+dim(data)
+head(data)
+```
+After setting the 'data' frame, first of all, we need fix up event types. Cookbook indicates events have some variation in name spelling, such as FLOOD and THUNDERSTORM WIND. Therefore, we need to change the names of these events as follows.
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+data[data$EVTYPE == "HURRICANE/TYPHOON", ]$EVTYPE = "HURRICANE-TYPHOON"
+data[data$EVTYPE == "HURRICANE", ]$EVTYPE = "HURRICANE-TYPHOON"
+data[data$EVTYPE == "RIVER FLOOD", ]$EVTYPE = "FLOOD"
+data[data$EVTYPE == "THUNDERSTORM WINDS", ]$EVTYPE = "THUNDERSTORM WIND"
+data[data$EVTYPE == "TSTM WIND", ]$EVTYPE = "THUNDERSTORM WIND"
+```
+We will now proceed to generate some Results
+
+## Results
+
+### 1. 10 Most harmful events to human health across the United States
+
+We then count four types of damage: fatality (FATALITIES) , injury (INJURIES), property damage (PROPDMG) and crop damage (CROPDMG) , while the latter two should be calculated with magnitude, PROPDMGEXP and CROPDMGEXP. The first two items related to human health directly, we summarized these two types of data here.
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+fatalities <- aggregate(FATALITIES ~ EVTYPE, data = data, sum)
+fatalities <- fatalities[fatalities$FATALITIES > 0, ]
+fatalities_desc <- fatalities[order(fatalities$FATALITIES, decreasing = TRUE), ]
+head(fatalities_desc, n = 10)
+```
+
+We code the fatality aggregates by event type and rank them in the decreasing order. We can find that tornado and excessive heat are of the most events which cause fatalities in the past years since 1950. 
+
+Next, we will summary the data of injury.
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+injuries <- aggregate(INJURIES ~ EVTYPE, data = data, sum)
+injuries <- injuries[injuries$INJURIES > 0, ]
+injuries_desc <- injuries[order(injuries$INJURIES, decreasing = TRUE), ]
+head(injuries_desc, n = 10)
+```
+
+Then we can draw a panel of two figures to depict the event impact order on fatality and injury.
+
+***Fatality and Injuries***
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+par(mfrow = c(1, 2), mar = c(12, 4, 3, 2), mgp = c(3, 1, 0), cex = 0.8)
+barplot(fatalities_desc[1:10, 2], col = "black", las=3, names.arg = fatalities_desc[1:10, 1], ylab = "Fatality",  main = "Top 10 events causing most fatalities")
+barplot(injuries_desc[1:10, 2], col = "red", las=3, names.arg = injuries_desc[1:10, 1], ylab = "Injured people", main = "Top 10 events causing most injuries")
+```
+
+Events cause both major fatality and body injury are as follows.
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+intersect(fatalities_desc[1:10, 1], injuries_desc[1:10, 1])
+```
+
+**7 types of events are listed in both top 10 of fatality events and top 10 body injury events. Tornado is the most harmful event to human health, while others include excessive heat, flash flood, and thunderstorm wind.**
+
+### 2. Events Causing Property Damage and Crop Damage in the United States
+
+Here, we summarize the property damage and crop damage caused by these natural events
+
+
+***Property Damage and Crop Damage***
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+unique(data$PROPDMGEXP)
+```
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+unique(data$CROPDMGEXP)
+```
+
+From the cookbook, the letter "K" stands for thousands, while "M" for millions and "B" for billions. Since we find both upper and lower case from these letters, we need to transform the exponential terms back into actual values
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+data[data$PROPDMGEXP == "K", ]$PROPDMG <- data[data$PROPDMGEXP == "K", ]$PROPDMG * 1000 
+data[data$PROPDMGEXP == "M", ]$PROPDMG <- data[data$PROPDMGEXP == "M", ]$PROPDMG * 1e+06 
+data[data$PROPDMGEXP == "m", ]$PROPDMG <- data[data$PROPDMGEXP == "m", ]$PROPDMG * 1e+06 
+data[data$PROPDMGEXP == "B", ]$PROPDMG <- data[data$PROPDMGEXP == "B", ]$PROPDMG * 1e+09 
+data[data$CROPDMGEXP == "K", ]$CROPDMG <- data[data$CROPDMGEXP == "K", ]$CROPDMG * 1000 
+data[data$CROPDMGEXP == "k", ]$CROPDMG <- data[data$CROPDMGEXP == "k", ]$CROPDMG * 1000 
+data[data$CROPDMGEXP == "M", ]$CROPDMG <- data[data$CROPDMGEXP == "M", ]$CROPDMG * 1e+06 
+data[data$CROPDMGEXP == "m", ]$CROPDMG <- data[data$CROPDMGEXP == "m", ]$CROPDMG * 1e+06 
+data[data$CROPDMGEXP == "B", ]$CROPDMG <- data[data$CROPDMGEXP == "B", ]$CROPDMG * 1e+09 
+```
+
+We can then aggregate the propery damage and crop damage by event types and rank them in decreasing order.
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+damages <- aggregate(PROPDMG ~ EVTYPE, data = data, sum)
+damages <- damages[damages$PROPDMG > 0, ]
+damages_desc <- damages[order(damages$PROPDMG, decreasing = TRUE), ]
+head(damages_desc, n = 10)
+```
+
+**Flood is the most harmful event to property damage, while the second most harmful event is hurricane (typhoon).**
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+crop_damages <- aggregate(CROPDMG ~ EVTYPE, data = data, sum)
+crop_damages <- crop_damages[crop_damages$CROPDMG > 0, ]
+crop_damages_desc <- crop_damages[order(crop_damages$CROPDMG, decreasing = TRUE), ]
+head(crop_damages_desc, n = 10)
+```
+
+**Drought is the most harmful event causing crop damage while flood and hurricane (typhoon) are the second and third harmful events.**
+
+The following is to use a panel of two figures to show the 10 most harmful events causing property damage and crop damage.
+
+***Property Damage and Crop Damage***
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+par(mfrow = c(1, 2), mar = c(12, 4, 3, 2), mgp = c(3, 1, 0), cex = 0.8)
+barplot(damages_desc[1:10, 2], col = "purple", las = 3, names.arg = damages_desc[1:10, 1], ylab = "Property Damage ($)", main = "Top 10 events causing most property damage")
+barplot(crop_damages_desc[1:10, 2], col = "yellow", las = 3, names.arg = crop_damages_desc[1:10, 1], ylab = "Crop Damage ($)", main = "Top 10 events causing most crop damage")
+```
+
+**The two sequences of events causing property and crop damages are different.**
+
+we can then add these two types of damages together to see their sum damage.
+
+```{r, echo=TRUE, results='show', warning=FALSE, message=FALSE}
+total_damages <- merge(damages_desc, crop_damages_desc, by = "EVTYPE")
+total_damages$total = total_damages$PROPDMG + total_damages$CROPDMG
+total_damages_desc <- total_damages[order(total_damages$total, decreasing = TRUE), ]
+total_damages_desc[1:5, ]
+```
+
+**The top 5 events cause most economic loss are - Flood, Hurricane, Tornado, Storm Surge and Hail.**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
